@@ -1,0 +1,197 @@
+<html>
+	<head>
+		<title>sample weekly picker</title>
+
+		<link rel="stylesheet" href="./bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
+		<style>
+			.wrapper{
+				display: flex;
+				margin: auto;
+				justify-content: center;
+				max-width: 400px;
+				height: 100vh;
+			}
+			input{
+				display: block;
+				width: 100%;
+				border: 1px solid #cccccc;
+				height: 40px;
+			}
+			.date-weekly-picker{
+				height: 1px;
+				visibility: hidden;
+			}
+			.dropdown-menu{
+				position: absolute;
+			    top: 100%;
+			    left: 0;
+			    z-index: 1000;
+			    display: none;
+			    float: left;
+			    min-width: 160px;
+			    padding: 5px 0;
+			    margin: 2px 0 0;
+			    list-style: none;
+			    font-size: 14px;
+			    text-align: left;
+			    background-color: #fff;
+			    border: 1px solid #ccc;
+			    border: 1px solid rgba(0,0,0,.15);
+			    border-radius: 4px;
+			    box-shadow: 0 6px 12px rgba(0,0,0,.175);
+			    background-clip: padding-box;
+			}
+		</style>
+	</head>
+	<body>
+		
+		<div class="wrapper">
+			<div class="field-holder">
+				<input type="text" id="date-dummy" class="form-control">
+        		<input type="text" id="dates" name="dates" class="form-control date-weekly-picker">
+			</div>
+		</div>
+
+		<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    	<script type="text/javascript" src="./bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+		
+		<script>
+        var selectedWeekDays = [];
+        var selectWeek = true;
+
+        function getDayPosition(date) {
+
+            var newDate = new Date(date.getTime());
+            switch (date.getDay()) {
+                case 1 :
+                    newDate.setDate(date.getDate());
+                    break;
+                case 2 :
+                    newDate.setDate(date.getDate() - 1);
+                    break;
+                case 3 :
+                    newDate.setDate(date.getDate() - 2);
+                    break;
+                case 4 :
+                    newDate.setDate(date.getDate() - 3);
+                    break;
+                case 5 :
+                    newDate.setDate(date.getDate() - 4);
+                    break;
+            }
+
+            return newDate;
+        }
+
+        function updateDates(e) {
+            var date = e.date;
+            var newDate = getDayPosition(date);
+
+
+            if (e.dates.length > 1) {
+
+                var selectedWeekDaysArr = selectedWeekDays;
+                var mustRemove = null;
+                $.each(selectedWeekDaysArr, function (i, vdate) {
+                    var matched = 0;
+                    for (var x = 0; x < e.dates.length; x++) {
+                        if (vdate.toDateString() === e.dates[x].toDateString()) {
+                            matched++;
+                            break;
+                        }
+                    }
+
+                    if (matched < 1) {
+                        mustRemove = vdate;
+                    }
+                });
+
+                if (mustRemove) {
+                    //mustRemove contains the date that has been removed.
+                    var removeDate = getDayPosition(mustRemove);
+
+                    for (var x = 0; x < 5; x++) {
+                        var dateloop = new Date(new Date(removeDate.getTime()).setDate(removeDate.getDate() + x));
+                        $.each(selectedWeekDays, function (i, rvdate) {
+                            if (rvdate) {
+                                if (dateloop.toDateString() === rvdate.toDateString()) {
+                                    selectedWeekDays.splice(i, 1);
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    for (var x = 0; x < 5; x++) {
+                        var dateloop = new Date(new Date(newDate.getTime()).setDate(newDate.getDate() + x));
+                        selectedWeekDays.push(dateloop);
+                    }
+                }
+
+            } else {
+                for (var x = 0; x < 5; x++) {
+                    var dateloop = new Date(new Date(newDate.getTime()).setDate(newDate.getDate() + x));
+                    selectedWeekDays.push(dateloop);
+                }
+            }
+
+            $(e.currentTarget).datepicker('setDates', selectedWeekDays.length > 0 ? selectedWeekDays : null);
+            selectWeek = true;
+        }
+
+        $('#dates').datepicker({
+            daysOfWeekDisabled: (('TPBNonSchoolDays' in window) ? window.TPBNonSchoolDays : []),
+            multidate: true,
+            startDate: new Date(),
+            toggleActive: 'true',
+            orientation: 'auto bottom',
+            beforeShowDay: function (date) {
+                var _class = '';
+                return {classes: _class, tooltip: date.toDateString()};
+            }
+        }).on('changeDate', function (e) {
+            if (selectWeek) {
+                selectWeek = false;
+                if (e.date) updateDates(e);
+            }
+
+        }).on('show', function (e) {
+
+        }).on('hide', function (e) {
+
+            var dates = [];
+            var range = false;
+            var date = '';
+            var x = 0;
+
+            $.each(e.dates, function (i,d) {
+                x = i + 1;
+                if(i === 0){
+                    date = ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2) + "-" + d.getFullYear();
+                }else {
+                    var check = x / 5;
+                    if (check >= 1 && (check % 1 === 0)) {
+                        date = date + ' to ' +("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2) + "-" + d.getFullYear();
+                        range = true;
+                    } else if (check > 1 && ((check % 1).toFixed(1) === '0.2')) {
+                        date =  ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2) + "-" + d.getFullYear();
+                    }
+                }
+                if(range){
+                    dates.push(date);
+                    date = '';
+                    range = false;
+                }
+
+            });
+
+            $('#date-dummy').val(dates.join(', '));
+        });
+
+        $('#date-dummy').on('focus',function () {
+            $('#dates').datepicker('show');
+        });
+
+
+    </script>
+	</body>
+</html>
